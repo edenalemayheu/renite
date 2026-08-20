@@ -1,0 +1,81 @@
+[
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true,  "internalType": "uint256", "name": "deviceId",    "type": "uint256" },
+      { "indexed": true,  "internalType": "address", "name": "owner",       "type": "address" },
+      { "indexed": false, "internalType": "bytes32", "name": "deviceHash",  "type": "bytes32" },
+      { "indexed": false, "internalType": "uint256", "name": "registeredAt","type": "uint256" }
+    ],
+    "name": "DeviceRegistered",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true,  "internalType": "uint256", "name": "deviceId",       "type": "uint256" },
+      { "indexed": true,  "internalType": "address", "name": "previousOwner",  "type": "address" },
+      { "indexed": true,  "internalType": "address", "name": "newOwner",       "type": "address" },
+      { "indexed": false, "internalType": "uint256", "name": "transferredAt",  "type": "uint256" }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true,  "internalType": "uint256",                              "name": "deviceId",       "type": "uint256" },
+      { "indexed": false, "internalType": "enum DeviceRegistry.RecoveryStatus",   "name": "previousStatus", "type": "uint8"   },
+      { "indexed": false, "internalType": "enum DeviceRegistry.RecoveryStatus",   "name": "newStatus",      "type": "uint8"   },
+      { "indexed": false, "internalType": "uint256",                              "name": "updatedAt",      "type": "uint256" }
+    ],
+    "name": "RecoveryStatusUpdated",
+    "type": "event"
+  },
+  {
+    "inputs": [{ "internalType": "uint256", "name": "deviceId", "type": "uint256" }],
+    "name": "getDevice",
+    "outputs": [
+      { "internalType": "bytes32",                            "name": "deviceHash",   "type": "bytes32" },
+      { "internalType": "address",                            "name": "owner",        "type": "address" },
+      { "internalType": "uint256",                            "name": "registeredAt", "type": "uint256" },
+      { "internalType": "enum DeviceRegistry.RecoveryStatus", "name": "status",      "type": "uint8"   }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "bytes32", "name": "deviceHash", "type": "bytes32" }],
+    "name": "registerDevice",
+    "outputs": [{ "internalType": "uint256", "name": "deviceId", "type": "uint256" }],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalDevices",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "deviceId", "type": "uint256" },
+      { "internalType": "address", "name": "newOwner", "type": "address" }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256",                              "name": "deviceId",  "type": "uint256" },
+      { "internalType": "enum DeviceRegistry.RecoveryStatus",  "name": "newStatus", "type": "uint8"   }
+    ],
+    "name": "updateRecoveryStatus",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

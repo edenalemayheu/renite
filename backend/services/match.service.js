@@ -2,6 +2,7 @@ import Report from '../models/Report.js';
 import Match from '../models/Match.js';
 import { AppError } from './auth.service.js';
 import { distanceKm } from '../utils/geo.js';
+import { blockchainService, RecoveryStatus } from './blockchain.service.js';
 
 const THRESHOLD = 40; // minimum score to auto-create a PENDING match
 
@@ -104,6 +105,42 @@ export const matchService = {
         { _id: { $in: [match.lost_report_id._id, match.found_report_id._id] } },
         { status: 'MATCHED' }
       );
+
+      // ----------------------------------------------------------------
+      // Blockchain status advancement -- ACCEPTED matches only.
+      //
+      // When a match is accepted both sides have been mutually confirmed,
+      // so we advance the on-chain status to RecoveryStarted (value 3).
+      // This is the earliest point where ownership context is established
+      // for both the LOST and FOUND sides.
+      //
+      // We update the LOST report's on-chain record because that is the
+      // report that was anchored at creation. The FOUND report has no
+      // blockchain_device_id by design (see report.service.js create()).
+      //
+      // If blockchain_device_id is absent (BLOCKCHAIN_ENABLED was false
+      // when the report was created, or anchoring failed at the time),
+      // we skip silently -- the match ACCEPTED transition still completes
+      // normally in MongoDB.
+      //
+      // The call waits for one block confirmation. Any failure is caught
+      // and logged; it never rolls back the match status change.
+      // ----------------------------------------------------------------
+      const lostDeviceId = match.lost_report_id.blockchain_device_id;
+      if (lostDeviceId) {
+        try {
+          await blockchainService.updateRecoveryStatus(
+            lostDeviceId,
+            RecoveryStatus.RecoveryStarted
+          );
+        } catch (err) {
+          console.error(
+            '[match.service] Blockchain status update failed for match',
+            match._id,
+            err.message
+          );
+        }
+      }
     }
     return match;
   }
