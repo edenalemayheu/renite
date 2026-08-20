@@ -50,6 +50,33 @@ const ReportSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
+
+  // ------------------------------------------------------------------
+  // Blockchain anchoring fields (additive -- optional, never required)
+  //
+  // blockchain_device_id: the uint256 deviceId returned by
+  //   DeviceRegistry.registerDevice(). Stored as a String because
+  //   JavaScript BigInt / MongoDB NumberLong handling varies across
+  //   driver versions. Sparse index avoids a null-uniqueness conflict
+  //   on documents created before blockchain integration was enabled.
+  //
+  // blockchain_tx_hash: the transaction hash of the registerDevice()
+  //   call. Useful for linking a report to its on-chain audit entry.
+  //
+  // These fields are populated by report.service.js after a successful
+  // blockchain.service.registerDevice() call. They remain null/absent
+  // when BLOCKCHAIN_ENABLED=false or when the anchoring call fails.
+  // ------------------------------------------------------------------
+  blockchain_device_id: {
+    type: String,
+    default: null,
+    sparse: true,
+  },
+  blockchain_tx_hash: {
+    type: String,
+    default: null,
+  },
+
   deleted_at: {
     type: Date,
     default: null

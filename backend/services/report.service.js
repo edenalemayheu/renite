@@ -3,6 +3,8 @@ import Report from '../models/Report.js';
 import Category from '../models/Category.js';
 import Material from '../models/Material.js';
 import { AppError } from './auth.service.js';
+import { matchService } from './match.service.js';
+import { blockchainService } from './blockchain.service.js';
 
 const OWNER_ONLY_STATES = ['ACTIVE', 'MATCHED', 'IN_VERIFICATION'];
 
@@ -23,10 +25,51 @@ export const reportService = {
     if (!category) throw new AppError(404, 'CATEGORY_NOT_FOUND', 'Category not found');
     if (!material) throw new AppError(404, 'MATERIAL_NOT_FOUND', 'Material not found');
 
-    return Report.create({
+    const report = await Report.create({
       user_id: userId, category_id, material_id, type, title, description,
       location, incident_date, token: randomUUID()
     });
+
+    // Best-effort: matching failures should never break report creation
+    matchService.generateForReport(report).catch((err) => {
+      console.error('Match generation failed:', err.message);
+    });
+
+    // ------------------------------------------------------------------
+    // Blockchain anchoring -- LOST reports only.
+    //
+    // We anchor only LOST reports because ownership is established at
+    // the time of loss: the reporter is the claimant. FOUND reports have
+    // no known owner at creation time, so anchoring them would create
+    // orphaned on-chain entries. The FOUND side is implicitly covered
+    // when a match is ACCEPTED (see match.service.js updateStatus).
+    //
+    // We hash the MongoDB ObjectId -- never the title, description,
+    // location, or any other PII. The hash is a one-way SHA-256 digest
+    // that links the on-chain record back to this database document
+    // without exposing any personal data on the blockchain.
+    //
+    // The anchoring call waits for one block confirmation. If it fails
+    // for any reason (node unreachable, revert, timeout, BLOCKCHAIN_ENABLED
+    // not set), the error is caught here and the report is still returned
+    // successfully. The blockchain fields remain null in that case.
+    // ------------------------------------------------------------------
+    if (type === 'LOST') {
+      try {
+        const deviceHash = blockchainService.hashEntityId(report._id.toString());
+        const result = await blockchainService.registerDevice(deviceHash);
+        if (result) {
+          report.blockchain_device_id = result.deviceId.toString();
+          report.blockchain_tx_hash   = result.txHash;
+          await report.save();
+        }
+      } catch (err) {
+        // Blockchain failure must never fail the report creation response
+        console.error('[report.service] Blockchain anchoring failed for report', report._id, err.message);
+      }
+    }
+
+    return report;
   },
 
   async list({ type, status, category_id, page = 1, limit = 20 }) {
