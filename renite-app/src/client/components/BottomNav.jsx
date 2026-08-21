@@ -24,7 +24,6 @@ export default function BottomNav() {
   const location = useLocation();
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
 
-  console.log("TESTING: BottomNav is rendering!");
   const handleAction = (route) => {
     setIsActionMenuOpen(false);
     navigate(route);

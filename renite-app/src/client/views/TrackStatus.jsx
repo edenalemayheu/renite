@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Search, Clock, AlertCircle, Loader2 } from 'lucide-react';
-import { supabase } from './supabase'; // Adjust path if needed
+import { supabase } from '../../supabase';
 
 export default function TrackStatus() {
   const [searchCode, setSearchCode] = useState('');
